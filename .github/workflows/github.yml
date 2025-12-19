@@ -1,5 +1,4 @@
 name: CI/CD Loyalty Service to Yandex Cloud
-
 on:
   push:
     branches: [ master ]
