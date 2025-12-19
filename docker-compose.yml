@@ -1,0 +1,17 @@
+version: '3.9'
+
+services:
+  review-service:
+    build: ./review-service
+    ports:
+      - "8001:80"
+    container_name: review_service
+
+  loyalty-service:
+    build: ./loyalty-service
+    ports:
+      - "8002:80"
+    container_name: loyalty_service
+
+
+
