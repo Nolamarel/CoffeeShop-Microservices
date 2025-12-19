@@ -22,7 +22,9 @@ jobs:
           pip install pytest fastapi uvicorn httpx pydantic uuid6
 
       - name: Run tests
-        run: cd loyalty-service && pytest -v
+        run: |
+          cd loyalty-service
+          PYTHONPATH=. pytest -v
 
   deploy-yc:
     runs-on: ubuntu-latest
