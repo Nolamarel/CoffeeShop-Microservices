@@ -24,7 +24,7 @@ jobs:
       - name: Run tests
         run: |
           cd loyalty-service
-          PYTHONPATH=. pytest -v
+          PYTHONPATH=. pytest -v tests
 
   deploy-yc:
     runs-on: ubuntu-latest
