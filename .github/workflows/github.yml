@@ -44,7 +44,7 @@ jobs:
 
       - name: Deploy Serverless Container
         run: |
-          yc serverless container revision create \
+          yc serverless container revision deploy \
             --container-name ${{ secrets.YC_CONTAINER_NAME }} \
             --cloud-id ${{ secrets.YC_CLOUD_ID }} \
             --folder-id ${{ secrets.YC_FOLDER_ID }} \
@@ -52,4 +52,4 @@ jobs:
             --memory 128m \
             --cores 1 \
             --execution-timeout 5s \
-            --environment POSTGRES_URL="postgresql://secUREusER:StrongEnoughPassword@51.250.26.59:5432/"
+            --environment POSTGRES_URL="${{ secrets.POSTGRES_URL }}"
