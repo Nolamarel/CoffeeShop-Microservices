@@ -25,6 +25,7 @@ jobs:
           docker build -t $IMAGE_TAG ./loyalty-service
           docker push $IMAGE_TAG
 
+
   deploy-serverless:
     runs-on: ubuntu-latest
     needs: deploy-yc
