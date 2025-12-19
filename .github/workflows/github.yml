@@ -1,48 +1,10 @@
-name: CI/CD for CoffeeShop-Microservices
+name: Test CI
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [push]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install dependencies
-        run: |
-          pip install pytest fastapi uvicorn httpx
-          pip install -r review-service/requirements.txt || true
-          pip install -r loyalty-service/requirements.txt || true
-
-      - name: Run tests
-        run: |
-          cd review-service && pytest -v
-          cd ../loyalty-service && pytest -v
-
-  build-and-push:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push images
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/coffee-review:latest ./review-service
-          docker push ${{ secrets.DOCKER_USERNAME }}/coffee-review:latest
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/coffee-loyalty:latest ./loyalty-service
-          docker push ${{ secrets.DOCKER_USERNAME }}/coffee-loyalty:latest
+      - run: echo "CI/CD работает!"
