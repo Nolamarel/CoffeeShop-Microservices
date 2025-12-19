@@ -45,7 +45,7 @@ jobs:
         run: |
           yc serverless container revision create \
             --container-name ${{ secrets.YC_CONTAINER_NAME }} \
-            --cloud-id <YOUR_CLOUD_ID> \
+            --cloud-id <YC_CLOUD_ID> \
             --folder-id ${{ secrets.YC_FOLDER_ID }} \
             --image cr.yandex/${{ secrets.YC_REGISTRY_ID }}/coffee-loyalty:latest \
             --memory 128m \
