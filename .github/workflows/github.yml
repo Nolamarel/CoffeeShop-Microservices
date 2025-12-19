@@ -10,27 +10,32 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: |
-          pip install pytest fastapi uvicorn pydantic httpx
-          pip install -r review-service/requirements.txt
-          pip install -r loyalty-service/requirements.txt
+          pip install pytest fastapi uvicorn httpx pydantic uuid6
 
       - name: Run tests
-        run: pytest -v
+        run: |
+          echo "=== Running tests in review-service ==="
+          cd review-service && pytest -v
+          cd ..
+          echo "=== Running tests in loyalty-service ==="
+          cd loyalty-service && pytest -v
 
   build-docker:
     runs-on: ubuntu-latest
-    needs: test  # Сборка только если тесты прошли
+    needs: test  # Только если тесты прошли
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -38,30 +43,18 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Review Service
-        uses: docker/build-push-action@v6
-        with:
-          context: review-service
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/coffee-review:latest
+      - name: Build and push review-service
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/coffee-review:latest ./review-service
+          docker push ${{ secrets.DOCKER_USERNAME }}/coffee-review:latest
 
-      - name: Build and push Loyalty Service
-        uses: docker/build-push-action@v6
-        with:
-          context: loyalty-service
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/coffee-loyalty:latest
+      - name: Build and push loyalty-service
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/coffee-loyalty:latest ./loyalty-service
+          docker push ${{ secrets.DOCKER_USERNAME }}/coffee-loyalty:latest
 
-  deploy-vercel:
+  success:
     runs-on: ubuntu-latest
     needs: build-docker
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          scope: ${{ secrets.VERCEL_ORG_ID }}
+      - run: echo "CI/CD pipeline completed successfully! Images pushed to Docker Hub."
