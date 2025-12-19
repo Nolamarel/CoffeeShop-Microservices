@@ -7,52 +7,34 @@ on:
     branches: [ master ]
 
 jobs:
-  test-and-build:
+  deploy-serverless:
     runs-on: ubuntu-latest
-
+    needs: deploy-yc
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          pip install pytest fastapi uvicorn httpx
-
-      - name: Run tests
-        run: |
-          cd review-service
-          PYTHONPATH=. pytest -v
-
-      # ---------- Yandex Cloud auth ----------
+      # Установка yc CLI
       - name: Install yc CLI
         run: |
           curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
           echo "$HOME/yandex-cloud/bin" >> $GITHUB_PATH
 
+      # Авторизация в Yandex Cloud
       - name: Auth to Yandex Cloud
         run: |
           echo '${{ secrets.YC_KEYS }}' > key.json
           yc config set service-account-key key.json
 
-      # ---------- Docker login to YCR ----------
-      - name: Login to Yandex Container Registry
+      # Создание новой ревизии Serverless Container
+      - name: Deploy Serverless Container
         run: |
-          yc container registry configure-docker
-
-      # ---------- Build & push ----------
-      - name: Build and push image
-        run: |
-          docker build \
-            -t cr.yandex/${{ secrets.YC_REGISTRY_ID }}/coffee-review:latest \
-            ./review-service
-
-          docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/coffee-review:latest
-
-          
-          
-          
+          yc serverless container revision create \
+            --container-name ${{ secrets.YC_CONTAINER_NAME }} \
+            --cloud-id <YOUR_CLOUD_ID> \
+            --folder-id ${{ secrets.YC_FOLDER_ID }} \
+            --image cr.yandex/${{ secrets.YC_REGISTRY_ID }}/coffee-loyalty:latest \
+            --memory 128m \
+            --cores 1 \
+            --execution-timeout 5s \
+            --environment POSTGRES_URL="postgresql://secUREusER:StrongEnoughPassword@51.250.26.59:5432/"
+  
