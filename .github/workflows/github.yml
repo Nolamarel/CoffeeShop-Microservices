@@ -7,34 +7,44 @@ on:
     branches: [ master ]
 
 jobs:
-  deploy-serverless:
+  deploy-yc:
     runs-on: ubuntu-latest
-    needs: deploy-yc
     steps:
       - uses: actions/checkout@v4
-
-      # Установка yc CLI
-      - name: Install yc CLI
+      - name: Login to Yandex Cloud Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: cr.yandex/${{ secrets.YC_REGISTRY_ID }}
+          username: json_key
+          password: ${{ secrets.YC_KEYS }}
+      - name: Build and push
         run: |
-          curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
-          echo "$HOME/yandex-cloud/bin" >> $GITHUB_PATH
+          IMAGE_TAG=cr.yandex/${{ secrets.YC_REGISTRY_ID }}/coffee-loyalty:latest
+          docker build -t $IMAGE_TAG ./loyalty-service
+          docker push $IMAGE_TAG
 
-      # Авторизация в Yandex Cloud
-      - name: Auth to Yandex Cloud
-        run: |
-          echo '${{ secrets.YC_KEYS }}' > key.json
-          yc config set service-account-key key.json
+deploy-serverless:
+  runs-on: ubuntu-latest
+  needs: deploy-yc   # <--- теперь правильно
+  steps:
+    - uses: actions/checkout@v4
+    - name: Install yc CLI
+      run: |
+        curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+        echo "$HOME/yandex-cloud/bin" >> $GITHUB_PATH
+    - name: Auth to Yandex Cloud
+      run: |
+        echo '${{ secrets.YC_KEYS }}' > key.json
+        yc config set service-account-key key.json
+    - name: Deploy Serverless Container
+      run: |
+        yc serverless container revision create \
+          --container-name ${{ secrets.YC_CONTAINER_NAME }} \
+          --cloud-id <YOUR_CLOUD_ID> \
+          --folder-id ${{ secrets.YC_FOLDER_ID }} \
+          --image cr.yandex/${{ secrets.YC_REGISTRY_ID }}/coffee-loyalty:latest \
+          --memory 128m \
+          --cores 1 \
+          --execution-timeout 5s \
+          --environment POSTGRES_URL="postgresql://secUREusER:StrongEnoughPassword@51.250.26.59:5432/"
 
-      # Создание новой ревизии Serverless Container
-      - name: Deploy Serverless Container
-        run: |
-          yc serverless container revision create \
-            --container-name ${{ secrets.YC_CONTAINER_NAME }} \
-            --cloud-id <YOUR_CLOUD_ID> \
-            --folder-id ${{ secrets.YC_FOLDER_ID }} \
-            --image cr.yandex/${{ secrets.YC_REGISTRY_ID }}/coffee-loyalty:latest \
-            --memory 128m \
-            --cores 1 \
-            --execution-timeout 5s \
-            --environment POSTGRES_URL="postgresql://secUREusER:StrongEnoughPassword@51.250.26.59:5432/"
-  
